@@ -18,6 +18,13 @@ async function startServer() {
   app.use((req, res) => {
     res.send("hello from express apollo server");
   });
+
+  await mongoose.connect("mongodb://localhost:27017/post_db", {
+    // ?????
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+  });
+  console.log("Mongoose connected ... ");
   app.listen(4000, () => console.log("Server are runnig on port 4000"));
 }
 startServer();
