@@ -5,9 +5,15 @@
   "main": "index.js",
   "dependencies": {
     "apollo-server-express": "^3.10.0",
+    "bcrypt": "^5.0.1",
+    "ejs": "^3.1.8",
     "express": "^4.18.1",
+    "express-flash": "0.0.2",
+    "express-session": "^1.17.3",
     "graphql": "^16.5.0",
     "mongoose": "^6.5.1",
+    "passport": "^0.6.0",
+    "passport-local": "^1.0.0",
     "touch-cli": "^0.0.1"
   },
   "devDependencies": {
