@@ -12,9 +12,11 @@ const passport = require("passport");
 const initializePassport = require("./passport-config");
 const flash = require("express-flash");
 const session = require("express-session");
-
-initializePassport(passport, (email) =>
-  users.find((user) => user.email === email)
+const methodOverride = require("method-override");
+initializePassport(
+  passport,
+  (email) => users.find((user) => user.email === email),
+  (id) => users.find((user) => user.id === id)
 );
 
 const users = [];
@@ -31,17 +33,19 @@ async function startServer() {
   );
   app.use(passport.initialize());
   app.use(passport.session());
-  app.get("/login", (req, res) => {
+  app.use(methodOverride("_method"));
+  app.get("/login", checkNotAuthenticated, (req, res) => {
     app.set("view-engine", "ejs");
     res.render("login.ejs");
   });
-  app.get("/register", (req, res) => {
+  app.get("/register", checkNotAuthenticated, (req, res) => {
     app.set("view-engine", "ejs");
     res.render("register.ejs");
   });
 
   app.post(
     "/login",
+    checkNotAuthenticated,
     passport.authenticate("local", {
       successRedirect: "/",
       failureRedirect: "/login",
@@ -49,7 +53,7 @@ async function startServer() {
     })
   );
 
-  app.post("/register", async (req, res) => {
+  app.post("/register", checkNotAuthenticated, async (req, res) => {
     try {
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
       users.push({
@@ -75,14 +79,20 @@ async function startServer() {
 
   apolloServer.applyMiddleware({ app: app, path: "/Ayazi" });
 
-  app.use((req, res) => {
+  app.use(checkAuthenticated, (req, res) => {
     app.set("view-engine", "ejs");
-    res.render("index.ejs", { name: "Arman Ayazi" });
+    res.render("index.ejs", { name: req.user.name });
   });
 
   // app.get("/", (req, res) => {
   //   res.render("index.ejs");
   // });
+
+  app.delete("/logout", (req, res) => {
+    req.logOut();
+    res.redirect("/login");
+  });
+
   await mongoose.connect("mongodb://localhost:27017/post_db", {
     // ?????
     useUnifiedTopology: true,
@@ -90,5 +100,20 @@ async function startServer() {
   });
   console.log("Mongoose connected ... ");
   app.listen(4000, () => console.log("Server are runnig on port 4000"));
+}
+
+//its a middleware function
+function checkAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect("/login");
+}
+
+function checkNotAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return res.redirect("/");
+  }
+  next();
 }
 startServer();
