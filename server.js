@@ -13,11 +13,17 @@ const initializePassport = require("./passport-config");
 const flash = require("express-flash");
 const session = require("express-session");
 const methodOverride = require("method-override");
+const redis = require("redis");
+const connectRedis = require("connect-redis")(session);
+let RedisStore = require("connect-redis")(session);
+const redisClient = redis.createClient({ host: "192.168.45.130", port: 6379 });
+
 initializePassport(
   passport,
   (email) => users.find((user) => user.email === email),
   (id) => users.find((user) => user.id === id)
 );
+
 //instead of user database
 const users = [];
 
@@ -45,6 +51,7 @@ async function startServer() {
   app.use(flash());
   app.use(
     session({
+      store: new RedisStore({ client: redisClient }),
       secret: process.env.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
