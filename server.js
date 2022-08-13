@@ -18,10 +18,29 @@ initializePassport(
   (email) => users.find((user) => user.email === email),
   (id) => users.find((user) => user.id === id)
 );
-
+//instead of user database
 const users = [];
+
 async function startServer() {
   const app = express();
+
+  const apolloServer = new ApolloServer({
+    typeDefs,
+    resolvers,
+  });
+  //this can be deleted but highly recomended
+  await apolloServer.start();
+
+  apolloServer.applyMiddleware({ app: app, path: "/Ayazi" });
+
+  await mongoose.connect("mongodb://localhost:27017/post_db", {
+    // ?????
+    useUnifiedTopology: true,
+    useNewUrlParser: true,
+  });
+  console.log("Mongoose connected ... ");
+
+  //------------------------------USER
   app.use(express.urlencoded({ extended: false }));
   app.use(flash());
   app.use(
@@ -34,13 +53,10 @@ async function startServer() {
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(methodOverride("_method"));
+
   app.get("/login", checkNotAuthenticated, (req, res) => {
     app.set("view-engine", "ejs");
     res.render("login.ejs");
-  });
-  app.get("/register", checkNotAuthenticated, (req, res) => {
-    app.set("view-engine", "ejs");
-    res.render("register.ejs");
   });
 
   app.post(
@@ -52,6 +68,11 @@ async function startServer() {
       failureFlash: true,
     })
   );
+
+  app.get("/register", checkNotAuthenticated, (req, res) => {
+    app.set("view-engine", "ejs");
+    res.render("register.ejs");
+  });
 
   app.post("/register", checkNotAuthenticated, async (req, res) => {
     try {
@@ -70,35 +91,16 @@ async function startServer() {
     console.log(users);
   });
 
-  const apolloServer = new ApolloServer({
-    typeDefs,
-    resolvers,
-  });
-  //this can be deleted but highly recomended
-  await apolloServer.start();
-
-  apolloServer.applyMiddleware({ app: app, path: "/Ayazi" });
-
   app.use(checkAuthenticated, (req, res) => {
     app.set("view-engine", "ejs");
     res.render("index.ejs", { name: req.user.name });
   });
-
-  // app.get("/", (req, res) => {
-  //   res.render("index.ejs");
-  // });
 
   app.delete("/logout", (req, res) => {
     req.logOut();
     res.redirect("/login");
   });
 
-  await mongoose.connect("mongodb://localhost:27017/post_db", {
-    // ?????
-    useUnifiedTopology: true,
-    useNewUrlParser: true,
-  });
-  console.log("Mongoose connected ... ");
   app.listen(4000, () => console.log("Server are runnig on port 4000"));
 }
 
