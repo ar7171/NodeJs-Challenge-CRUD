@@ -17,7 +17,12 @@ const redis = require("redis");
 const connectRedis = require("connect-redis")(session);
 let RedisStore = require("connect-redis")(session);
 const redisClient = redis.createClient({ host: "192.168.45.130", port: 6379 });
-
+redisClient.on("error", function (err) {
+  console.log("Could not establish a connection with redis. " + err);
+});
+redisClient.on("connect", function (err) {
+  console.log("Connected to redis successfully");
+});
 initializePassport(
   passport,
   (email) => users.find((user) => user.email === email),
